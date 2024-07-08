@@ -104,7 +104,7 @@ abstract class JDBCBaseAdapter implements Adapter, BatchAdapter, UpdatableAdapte
 
     protected void migrate() throws SQLException {
         Statement stmt = conn.createStatement();
-        String sql = renderActualSql("CREATE TABLE IF NOT EXISTS casbin_rule(id int NOT NULL PRIMARY KEY auto_increment, ptype VARCHAR(100) NOT NULL, v0 VARCHAR(100), v1 VARCHAR(100), v2 VARCHAR(100), v3 VARCHAR(100), v4 VARCHAR(100), v5 VARCHAR(100))");
+        String sql;
         String productName = conn.getMetaData().getDatabaseProductName();
 
         switch (productName) {
@@ -123,9 +123,11 @@ abstract class JDBCBaseAdapter implements Adapter, BatchAdapter, UpdatableAdapte
                         "else raise; " +
                         "end if; " +
                         "end;");
+                stmt.executeUpdate(sql);
                 break;
             case "Microsoft SQL Server":
                 sql = renderActualSql("IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='casbin_rule' and xtype='U') CREATE TABLE casbin_rule(id int NOT NULL primary key identity(1, 1), ptype VARCHAR(100) NOT NULL, v0 VARCHAR(100), v1 VARCHAR(100), v2 VARCHAR(100), v3 VARCHAR(100), v4 VARCHAR(100), v5 VARCHAR(100))");
+                stmt.executeUpdate(sql);
                 break;
             case "PostgreSQL":
                 sql = renderActualSql("do $$ " +
@@ -136,13 +138,14 @@ abstract class JDBCBaseAdapter implements Adapter, BatchAdapter, UpdatableAdapte
                         "END IF; " +
                         "END; " +
                         "$$;");
+                stmt.executeUpdate(sql);
                 break;
             case "H2":
                 sql = renderActualSql("CREATE TABLE IF NOT EXISTS casbin_rule(id int GENERATED ALWAYS AS IDENTITY PRIMARY KEY, ptype VARCHAR(100) NOT NULL, v0 VARCHAR(100), v1 VARCHAR(100), v2 VARCHAR(100), v3 VARCHAR(100), v4 VARCHAR(100), v5 VARCHAR(100))");
+                stmt.executeUpdate(sql);
                 break;
         }
 
-        stmt.executeUpdate(sql);
         if ("Oracle".equals(productName)) {
             sql = renderActualSql("declare " +
                     "V_NUM number;" +
